@@ -14,6 +14,8 @@ When upstream merges a patch, we drop it from this fork at the next sync.
 - `hulo/hh-NNNN-<slug>` holds one patch for one ticket. Open it from `hulo/integration`.
 - Merge each patch branch into `hulo/integration` with a squash merge, through a pull request.
 - After each merge, tag the merge commit `v0.2.3-hulo.N` (N = 1, 2, 3, ...).
+  A `v0.2.3-hulo.N` tag does not start the release workflow; releases of the fork are never
+  needed, swg-core pins a commit.
 
 The `rust.yml` workflow (format, lint, build, test) runs on every push to and pull request into
 `master` and `hulo/*` branches.
