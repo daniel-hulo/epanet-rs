@@ -1,10 +1,7 @@
 name: Validate EPANET Example Networks
 
+# HULO fork: on demand only (see HULO.md).
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
   workflow_dispatch:
 
 env:
