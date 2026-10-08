@@ -15,6 +15,9 @@ When upstream merges a patch, we drop it from this fork at the next sync.
 - Merge each patch branch into `hulo/integration` with a squash merge, through a pull request.
 - After each merge, tag the merge commit `v0.2.3-hulo.N` (N = 1, 2, 3, ...).
 
+The `rust.yml` workflow (format, lint, build, test) runs on every push to and pull request into
+`master` and `hulo/*` branches.
+
 `master` and `hulo/integration` are protected: a pull request is necessary, and force pushes and
 deletions are not permitted.
 

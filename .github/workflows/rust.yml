@@ -1,10 +1,11 @@
 name: Build and Test EPANET-RS
 
+# HULO fork: also run on hulo/* branches (see HULO.md).
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "hulo/**"]
   pull_request:
-    branches: ["master"]
+    branches: ["master", "hulo/**"]
 
 env:
   CARGO_TERM_COLOR: always
