@@ -9,19 +9,24 @@ When upstream merges a patch, we drop it from this fork at the next sync.
 
 ## Branches
 
-- `master` mirrors upstream `master`. Update it by fast-forward only. Do not commit HULO work on it.
+- `master` mirrors upstream `master`. Update it only by a fast-forward to `upstream/master` (see
+  Sync with upstream). Do not commit HULO work on it.
 - `hulo/integration` is the branch that swg-core pins. It is `master` plus the HULO patches.
 - `hulo/hh-NNNN-<slug>` holds one patch for one ticket. Open it from `hulo/integration`.
 - Merge each patch branch into `hulo/integration` with a squash merge, through a pull request.
   The squash commit is the patch: one commit per patch, recorded in the Patches table.
 
 `master` and `hulo/integration` are protected: a pull request is necessary, and force pushes and
-deletions are not permitted.
+deletions are not permitted. The protection is not enforced for admins. The one authorised use of
+this admin bypass is the fast-forward of `master` in a sync (step 1 of Sync with upstream).
 
 ## Tags
 
-- After each merge into `hulo/integration`, tag the merge commit `v<upstream version>-hulo.N`.
-  The upstream version is the `version` in `Cargo.toml` (today `0.2.3`).
+- After each solver-patch merge into `hulo/integration`, tag the merge commit
+  `v<upstream version>-hulo.N`. The upstream version is the `version` in `Cargo.toml` (today
+  `0.2.3`).
+- A sync merge also gets a tag (step 5 of Sync with upstream). No other merge gets a tag: for
+  example, the set-up merge that adds the fork files (`HULO.md`, `.github/`) gets no tag.
 - N counts up by 1 for each tag. It restarts at 1 after a sync that changes the upstream
   version. A sync that keeps the upstream version continues the count, because a tag name can
   exist only once.
@@ -60,9 +65,13 @@ One row for each solver patch. Status values:
 ## Sync with upstream
 
 Do not rebase `hulo/integration`. It is protected against force pushes, and the squash commits
-of the patches must stay. A sync is a merge:
+of the patches must stay. A sync changes `hulo/integration` only through the merge pull request
+from the sync branch (step 4): never a rebase, never a force-push. A sync is a merge:
 
-1. Fast-forward `master` to `upstream/master`.
+1. An admin fast-forwards `master` to `upstream/master` and pushes it directly
+   (`git push origin upstream/master:refs/heads/master`, a fast-forward, not a force push).
+   The pull request rule on `master` does not apply to admins, so the push is accepted. This is
+   the one authorised bypass of the branch protection. Do not push anything else to `master`.
 2. Make a branch `hulo/sync-<date>` from `hulo/integration`, and merge `master` into it
    (`git merge master`, no rebase).
 3. In the same branch, drop the patches that upstream has merged:
@@ -80,10 +89,14 @@ of the patches must stay. A sync is a merge:
 
 ## Continuous integration
 
+Only `rust.yml` runs on pushes: on each push to `master` and `hulo/**` branches, and on each pull
+request into them. `validate.yml` runs only on pull requests into `hulo/integration` and on
+demand. `benchmark.yml` and `release.yml` run on demand only.
+
 | Workflow | What it does | When it runs |
 |---|---|---|
 | `rust.yml` | Format check, clippy, build and tests. | Each push to, and each pull request into, `master` and `hulo/**` branches. |
-| `validate.yml` | Builds EPANET from source, then runs `epanet-rs validate` against `runepanet` on each network of `epanet-example-networks`. | Each pull request into `hulo/integration`, and on demand. |
+| `validate.yml` | Builds EPANET 2.3.5 (tag `v2.3.5`) from source, then runs `epanet-rs validate` against `runepanet` on each network of `epanet-example-networks`. | Each pull request into `hulo/integration`, and on demand. |
 | `benchmark.yml` | Times epanet-rs against EPANET 2.3.5 with `hyperfine` on Linux and Windows. | On demand only. |
 | `release.yml` | Builds release binaries for Linux, macOS and Windows, and makes a GitHub release. | On demand only. |
 

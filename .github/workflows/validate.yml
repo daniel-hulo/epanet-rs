@@ -23,7 +23,7 @@ jobs:
 
     - name: Build EPANET from source
       run: |
-        git clone --depth 1 https://github.com/OpenWaterAnalytics/EPANET.git /tmp/epanet
+        git clone --depth 1 --branch v2.3.5 https://github.com/OpenWaterAnalytics/EPANET.git /tmp/epanet
         cmake -S /tmp/epanet -B /tmp/epanet/build -DCMAKE_BUILD_TYPE=Release
         cmake --build /tmp/epanet/build --config Release
         sudo cp /tmp/epanet/build/bin/runepanet /usr/local/bin/
