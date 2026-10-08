@@ -30,7 +30,7 @@ this admin bypass is the fast-forward of `master` in a sync (step 1 of Sync with
 - N counts up by 1 for each tag. It restarts at 1 after a sync that changes the upstream
   version. A sync that keeps the upstream version continues the count, because a tag name can
   exist only once.
-- The baseline is `v0.2.3-hulo.0` = `1a387056` (upstream `master` after the 0.2.3 release, no
+- The baseline is `v0.2.3-hulo.0` = `83842e1` (the integration head after the set-up merge: upstream `1a387056` plus the fork files) (upstream `master` after the 0.2.3 release, no
   HULO patch).
 - Do not change the crate `version` in `Cargo.toml`. swg-core asks for `^0.2.2`, and a
   prerelease version (for example `0.2.3-hulo.1`) does not match it: Cargo then only warns
