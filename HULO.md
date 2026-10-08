@@ -13,15 +13,24 @@ When upstream merges a patch, we drop it from this fork at the next sync.
 - `hulo/integration` is the branch that swg-core pins. It is `master` plus the HULO patches.
 - `hulo/hh-NNNN-<slug>` holds one patch for one ticket. Open it from `hulo/integration`.
 - Merge each patch branch into `hulo/integration` with a squash merge, through a pull request.
-- After each merge, tag the merge commit `v0.2.3-hulo.N` (N = 1, 2, 3, ...).
-  A `v0.2.3-hulo.N` tag does not start the release workflow; releases of the fork are never
-  needed, swg-core pins a commit.
-
-The `rust.yml` workflow (format, lint, build, test) runs on every push to and pull request into
-`master` and `hulo/*` branches.
+  The squash commit is the patch: one commit per patch, recorded in the Patches table.
 
 `master` and `hulo/integration` are protected: a pull request is necessary, and force pushes and
 deletions are not permitted.
+
+## Tags
+
+- After each merge into `hulo/integration`, tag the merge commit `v<upstream version>-hulo.N`.
+  The upstream version is the `version` in `Cargo.toml` (today `0.2.3`).
+- N counts up by 1 for each tag. It restarts at 1 after a sync that changes the upstream
+  version. A sync that keeps the upstream version continues the count, because a tag name can
+  exist only once.
+- The baseline is `v0.2.3-hulo.0` = `1a387056` (upstream `master` after the 0.2.3 release, no
+  HULO patch).
+- Do not change the crate `version` in `Cargo.toml`. swg-core asks for `^0.2.2`, and a
+  prerelease version (for example `0.2.3-hulo.1`) does not match it: Cargo then only warns
+  "patch was not used" and builds with the crates.io release.
+- A tag never starts the release workflow (see Continuous integration).
 
 ## How swg-core pins this fork
 
@@ -33,17 +42,55 @@ swg-core keeps the `epanet-rs` version from crates.io and replaces the source in
 epanet-rs = { git = "https://github.com/daniel-hulo/epanet-rs", rev = "<commit>" }
 ```
 
-Use the full commit of a `v0.2.3-hulo.N` tag on `hulo/integration`.
+Use the full commit of a `v<upstream version>-hulo.N` tag on `hulo/integration`.
 
 ## Patches
 
-| Tag | Branch | Finding | Upstream PR |
-|---|---|---|---|
-| (none) | `hulo/hh-4647-fork-setup` | Fork set-up (HH-4647): this file, CI on demand only. No solver patch. | Not applicable |
+One row for each solver patch. Status values:
+
+- `open`: the pull request into `hulo/integration` is open.
+- `merged`: the patch is in `hulo/integration`.
+- `upstreamed`: upstream has merged the patch; drop it at the next sync.
+- `dropped`: the patch is no longer in `hulo/integration`.
+
+| Tag | Squash commit | Finding | Upstream PR | Status |
+|---|---|---|---|---|
+| (no patch yet) | | | | |
 
 ## Sync with upstream
 
-To take new upstream work, fast-forward `master` to `upstream/master`.
-Then rebase `hulo/integration` onto the new `master` in its own pull request, named
-`chore(fork): sync upstream <date>`. Remove patches that upstream has merged, and run the
-HULO validation levels again before the next tag.
+Do not rebase `hulo/integration`. It is protected against force pushes, and the squash commits
+of the patches must stay. A sync is a merge:
+
+1. Fast-forward `master` to `upstream/master`.
+2. Make a branch `hulo/sync-<date>` from `hulo/integration`, and merge `master` into it
+   (`git merge master`, no rebase).
+3. In the same branch, drop the patches that upstream has merged:
+   - If upstream merged the patch as it is, the merge already holds the change once. Do not
+     revert the squash commit: that removes upstream's copy of the change too.
+   - If upstream merged a different version of the change, revert the squash commit
+     (`git revert <squash commit>`) and keep upstream's version.
+   - Check the result: `git diff master hulo/sync-<date>` shows only the open patches and the
+     fork files (`HULO.md`, `.github/`).
+4. Open a pull request `chore(fork): sync upstream <date>` into `hulo/integration`.
+   Merge it with a merge commit, not a squash merge, so that `master` stays an ancestor of
+   `hulo/integration`.
+5. Run the HULO validation levels again, then tag the merge commit (see Tags).
+6. Set the status of each dropped patch to `dropped` in the Patches table.
+
+## Continuous integration
+
+| Workflow | What it does | When it runs |
+|---|---|---|
+| `rust.yml` | Format check, clippy, build and tests. | Each push to, and each pull request into, `master` and `hulo/**` branches. |
+| `validate.yml` | Builds EPANET from source, then runs `epanet-rs validate` against `runepanet` on each network of `epanet-example-networks`. | Each pull request into `hulo/integration`, and on demand. |
+| `benchmark.yml` | Times epanet-rs against EPANET 2.3.5 with `hyperfine` on Linux and Windows. | On demand only. |
+| `release.yml` | Builds release binaries for Linux, macOS and Windows, and makes a GitHub release. | On demand only. |
+
+Why `validate.yml`, `benchmark.yml` and `release.yml` do not run on each push:
+
+- `validate.yml` builds EPANET from source and runs long comparisons. That is too slow for each
+  push. It is useful on a patch, so it runs on each pull request into `hulo/integration`.
+- `benchmark.yml` gives timings for a person to read. It does not decide a merge.
+- `release.yml` must not run on a tag: the fork does not make releases, because swg-core pins a
+  commit. Upstream's tag trigger is removed, so a `v*-hulo.N` tag does not start it.

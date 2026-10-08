@@ -1,7 +1,10 @@
 name: Validate EPANET Example Networks
 
-# HULO fork: on demand only (see HULO.md).
+# HULO fork: on pull requests into hulo/integration (each patch) and on demand. Not on push:
+# it builds EPANET from source and runs long comparisons (see HULO.md).
 on:
+  pull_request:
+    branches: ["hulo/integration"]
   workflow_dispatch:
 
 env:
