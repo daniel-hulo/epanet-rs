@@ -1,5 +1,6 @@
 name: Release
 
+# HULO fork: on demand only; hulo tags must not create releases (see HULO.md).
 on:
   workflow_dispatch:
     inputs:
@@ -12,9 +13,6 @@ on:
         required: false
         type: boolean
         default: true
-  push:
-    tags:
-      - 'v*.*.*'
 
 permissions:
   contents: write
