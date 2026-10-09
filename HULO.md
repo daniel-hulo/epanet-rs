@@ -60,7 +60,7 @@ One row for each solver patch. Status values:
 
 | Tag | Squash commit | Finding | Upstream PR | Status |
 |---|---|---|---|---|
-| (no patch yet) | | | | |
+| (at merge) | (at merge) | HH-4658: adds `SolverState::solve_stats` (`SolveStats`: GGA iterations and link status change at exit, per solve); the INP reader gives an error, not a solver panic, for a GPV without a curve, a GPV/PCV curve with 1 point, and C-M head loss | (not sent) | open |
 
 ## Sync with upstream
 

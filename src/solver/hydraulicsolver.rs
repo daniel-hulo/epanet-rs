@@ -8,7 +8,7 @@ use faer::sparse::{SparseColMat, SymbolicSparseColMat};
 use faer::{Mat, Side};
 
 use crate::solver::matrix::*;
-use crate::solver::state::SolverState;
+use crate::solver::state::{SolveStats, SolverState};
 
 use crate::model::units::Cfs;
 
@@ -145,7 +145,11 @@ impl HydraulicSolver {
         let mut damping_factor = 1.0;
         let mut prev_rel_change = f64::INFINITY;
 
+        // link statuses at the start of the current iteration, to detect status changes at exit
+        let mut statuses_at_start = state.statuses.clone();
+
         'gga: for iteration in 1..=network.options.max_trials {
+            statuses_at_start.copy_from_slice(&state.statuses);
             values.fill(0.0);
             rhs.fill(0.0);
 
@@ -286,6 +290,11 @@ impl HydraulicSolver {
                     flow_balance.total_supply,
                     flow_balance.total_demand
                 );
+
+                state.solve_stats = SolveStats {
+                    iterations: iteration,
+                    status_changed_at_exit: state.statuses != statuses_at_start,
+                };
 
                 return Ok(state);
             }
