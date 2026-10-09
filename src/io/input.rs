@@ -246,6 +246,15 @@ impl Network {
                         InputError::new(format!("Curve '{}' not found for valve", curve_id))
                     })?;
                     let curve = &self.curves[*curve_index];
+                    // the solver interpolates between two points of a GPV or PCV curve
+                    if matches!(valve.valve_type, ValveType::GPV | ValveType::PCV)
+                        && curve.x.len() < 2
+                    {
+                        return Err(InputError::new(format!(
+                            "Curve '{}' of {} valve '{}' must have at least 2 points",
+                            curve_id, valve.valve_type, link.id
+                        )));
+                    }
                     match valve.valve_type {
                         ValveType::GPV => {
                             valve.gpv_curve = Some(ValveCurve::new(
@@ -259,6 +268,13 @@ impl Network {
                         }
                         _ => {}
                     }
+                }
+                // the solver computes GPV head loss only from the curve
+                if valve.valve_type == ValveType::GPV && valve.gpv_curve.is_none() {
+                    return Err(InputError::new(format!(
+                        "GPV valve '{}' requires a curve id",
+                        link.id
+                    )));
                 }
             }
             if let LinkType::Pipe(pipe) = &mut link.link_type {
@@ -835,7 +851,12 @@ impl Network {
                 self.options.headloss_formula = match value.to_uppercase().as_str() {
                     "H-W" => HeadlossFormula::HazenWilliams,
                     "D-W" => HeadlossFormula::DarcyWeisbach,
-                    "C-M" => HeadlossFormula::ChezyManning,
+                    "C-M" => {
+                        // the pipe resistance is not implemented for Chezy-Manning
+                        return Err(InputError::new(
+                            "Chezy-Manning (C-M) headloss formula is not supported",
+                        ));
+                    }
                     _ => {
                         return Err(InputError::new(format!(
                             "Invalid headloss formula: {}",
@@ -1860,6 +1881,14 @@ mod tests {
             network.options.headloss_formula,
             HeadlossFormula::DarcyWeisbach
         );
+    }
+
+    #[test]
+    fn test_read_options_chezy_manning_is_an_error() {
+        // the pipe resistance is not implemented for C-M; before HH-4658 the solver panicked
+        let mut network = test_network(false);
+        let err = network.read_options("HEADLOSS  C-M").unwrap_err();
+        assert!(err.to_string().contains("not supported"));
     }
 
     #[test]

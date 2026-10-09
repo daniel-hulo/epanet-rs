@@ -1,0 +1,29 @@
+[TITLE]
+GPV with a one-point head-loss curve (malformed input, the reader must reject it)
+
+[JUNCTIONS]
+;ID              	Elev        	Demand      	Pattern
+ J1              	0           	1           	                	;
+ J2              	0           	1           	                	;
+
+[RESERVOIRS]
+;ID              	Head        	Pattern
+ R1              	100         	                	;
+
+[PIPES]
+;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
+ P1              	R1              	J1              	100         	12          	100         	0           	Open  	;
+
+[VALVES]
+;ID              	Node1           	Node2           	Diameter    	Type	Setting     	MinorLoss
+ V1              	J1              	J2              	12          	GPV 	C1          	0           	;
+
+[CURVES]
+;ID              	X-Value     	Y-Value
+ C1              	10          	5           
+
+[OPTIONS]
+ Units           	GPM
+ Headloss        	H-W
+
+[END]

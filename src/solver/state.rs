@@ -10,6 +10,24 @@ use crate::model::options::DemandModel;
 use crate::model::units::{Cfs, Ft3};
 use crate::utils::time::seconds_to_hhmmss;
 
+/// Statistics of the hydraulic solve that produced a [`SolverState`].
+///
+/// A state that no solve has produced yet (for example the state from
+/// [`SolverState::new_with_initial_values`]) holds the default value: zero iterations and no
+/// status change.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SolveStats {
+    /// Number of GGA iterations of the solve, including the iterations that the solver repeats
+    /// after it changes a valve status, grounds a node or applies a pressure control.
+    pub iterations: usize,
+    /// True if the final GGA iteration changed the status of one or more links.
+    ///
+    /// The convergence test of the solver ignores some status transitions (to and from
+    /// `TempClosed` and `Xhead`, and the closure of links at a full or empty tank). This flag
+    /// includes all transitions, so it can be true after a converged solve.
+    pub status_changed_at_exit: bool,
+}
+
 /// The solver state is the initial/final state of the solver for a single step
 #[derive(Debug, Clone)]
 pub struct SolverState {
@@ -25,6 +43,8 @@ pub struct SolverState {
     pub topology_version: u32,
     /// version of the properties of the network on which the state was created
     pub properties_version: u32,
+    /// statistics of the solve that produced this state
+    pub solve_stats: SolveStats,
 }
 
 impl SolverState {
@@ -81,6 +101,7 @@ impl SolverState {
                 .collect::<Vec<f64>>(),
             topology_version: network.topology_version,
             properties_version: network.properties_version,
+            solve_stats: SolveStats::default(),
         }
     }
 
