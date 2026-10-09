@@ -20,11 +20,16 @@ pub struct SolveStats {
     /// Number of GGA iterations of the solve, including the iterations that the solver repeats
     /// after it changes a valve status, grounds a node or applies a pressure control.
     pub iterations: usize,
-    /// True if the final GGA iteration changed the status of one or more links.
+    /// True if the link statuses at the end of the final GGA iteration differ from the statuses
+    /// at its start.
     ///
     /// The convergence test of the solver ignores some status transitions (to and from
     /// `TempClosed` and `Xhead`, and the closure of links at a full or empty tank). This flag
-    /// includes all transitions, so it can be true after a converged solve.
+    /// compares all statuses, so it can be true after a converged solve. It compares the end
+    /// points of the iteration only: a status that a later update in the same iteration restores
+    /// does not count. Example: a tank link that is `TempClosed` at the start of the iteration,
+    /// that the link update reopens and that the tank update closes again. The solve used the
+    /// same status at assembly and at exit, so the result is consistent with that status.
     pub status_changed_at_exit: bool,
 }
 
