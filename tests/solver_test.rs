@@ -4,6 +4,7 @@ use epanet_rs::model::link::LinkStatus;
 use epanet_rs::model::network::{LinkUpdate, Network, NodeUpdate};
 use epanet_rs::simulation::Simulation;
 use epanet_rs::solver::result::SolverResult;
+use epanet_rs::solver::state::{SolveStats, SolverState};
 
 fn verify_heads_and_flows(
     network: &Network,
@@ -522,4 +523,41 @@ fn test_bidirectional_gpv_curve() {
         .expect("Failed to solve hydraulics");
 
     assert!(result.flows[0][0].abs() - 100.0 < 1e-9)
+}
+
+/// The solved state reports the solve statistics of the GGA (HH-4658)
+#[test]
+fn test_solve_stats_after_converged_solve() {
+    let mut simulation =
+        Simulation::from_file("tests/pump.inp").expect("Failed to create simulation");
+
+    // a state that no solve has produced holds the default statistics
+    let initial_state = SolverState::new_with_initial_values(&simulation.network);
+    assert_eq!(initial_state.solve_stats, SolveStats::default());
+
+    // single step: initialize and run the hydraulics at t = 0
+    simulation
+        .initialize_hydraulics()
+        .expect("Failed to initialize hydraulics");
+    simulation
+        .run_hydraulics()
+        .expect("Failed to run hydraulics");
+    let stats = simulation
+        .solved_state()
+        .expect("Expected a solved state")
+        .solve_stats;
+    assert!(stats.iterations > 0);
+    assert!(stats.iterations <= simulation.network.options.max_trials);
+    assert!(!stats.status_changed_at_exit);
+
+    // full run: the solved state holds the statistics of the last solve
+    simulation
+        .solve_hydraulics(false)
+        .expect("Failed to solve hydraulics");
+    let stats = simulation
+        .solved_state()
+        .expect("Expected a solved state")
+        .solve_stats;
+    assert!(stats.iterations > 0);
+    assert!(!stats.status_changed_at_exit);
 }
