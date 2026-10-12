@@ -147,6 +147,11 @@ impl Simulation {
     /// Equivalent to EN_solveH.
     /// Simulations can be run in parallel or sequentially. Parallel mode is only supported for networks without tanks or pressure controls.
     /// Returns a SolverResult containing the flows and heads at each report step.
+    ///
+    /// After a parallel solve, [`Simulation::solved_state`] does not return a solved state: it
+    /// returns the initial state with the patterns at time 0, and its `solve_stats` hold the
+    /// default value. Use the sequential mode or [`Simulation::run_hydraulics`] to read the state
+    /// and the statistics of a solve.
     pub fn solve_hydraulics(&mut self, parallel: bool) -> Result<SolverResult, SolverError> {
         // initialize the solver if it is not initialized
         if self.solver.is_none() {
@@ -336,6 +341,9 @@ impl Simulation {
     }
 
     /// Returns the solved state if it is available, otherwise `None`.
+    ///
+    /// After a parallel [`Simulation::solve_hydraulics`], this is the initial state with the
+    /// patterns at time 0, not a solved state (see [`Simulation::solve_hydraulics`]).
     pub fn solved_state(&self) -> Option<&SolverState> {
         if self.solved {
             self.state.as_ref()
