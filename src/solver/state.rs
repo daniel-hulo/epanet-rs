@@ -19,7 +19,8 @@ use crate::utils::time::seconds_to_hhmmss;
 /// Read the statistics through [`Simulation::solved_state`](crate::simulation::Simulation::solved_state)
 /// after [`Simulation::run_hydraulics`](crate::simulation::Simulation::run_hydraulics) or after a
 /// sequential [`Simulation::solve_hydraulics`](crate::simulation::Simulation::solve_hydraulics).
-/// A parallel solve does not store its solved states, so the statistics keep the default value.
+/// A parallel solve does not store its solved states (see
+/// [`Simulation::solve_hydraulics`](crate::simulation::Simulation::solve_hydraulics)).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct SolveStats {
     /// Number of GGA iterations of the solve, including the iterations that the solver repeats
